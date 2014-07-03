@@ -1,0 +1,106 @@
+#!/bin/bash
+# chkconfig: 345 80 05
+# description: Start up the Terracotta WAN orchestrator node.
+## processname: tcwan
+##
+## user: $RUN_AS_USER
+##
+
+#configurable variables
+RUN_AS_USER="@some_system_user@"
+TERRACOTTA_HOME="@terracotta_home_path@"
+WAN_CONFIG_XML="@terracotta_config_home_path@"
+
+# Source function library.
+if [ -f /etc/init.d/functions ]; then
+  . /etc/init.d/functions
+elif [ -f /etc/rc.d/init.d/functions ] ; then
+  . /etc/rc.d/init.d/functions
+else
+  exit 0
+fi
+
+# Source networking configuration.
+if [ -f /etc/sysconfig/network ]; then
+  . /etc/sysconfig/network
+fi
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+    SU="/sbin/runuser"
+else
+    SU="/bin/su"
+fi
+
+RETVAL=$?
+CURRENT_USER=`id -nu`
+
+# See how we were called.
+function start() {
+    if [ -f $TERRACOTTA_HOME/bin/start-tc-server.sh ];
+		then
+        	cd $TERRACOTTA_HOME/bin
+			echo -n "Starting Terracotta WAN Server"
+			if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then	
+				$SU - $RUN_AS_USER -c "/usr/bin/nohup $TERRACOTTA_HOME/bin/start-wan.sh -f $WAN_CONFIG_XML" 2>&1 &
+        	else
+          		/usr/bin/nohup $TERRACOTTA_HOME/bin/start-wan.sh -f $WAN_CONFIG_XML 2>&1 &
+          	fi	
+	fi
+      
+    RETVAL="$?"
+    if [ "$RETVAL" -eq 0 ]; then
+        echo_success
+    else
+        echo_failure
+    fi
+    echo
+    return $RETVAL
+}
+
+function stop() {
+    RETVAL="0"
+    if [ -f $TERRACOTTA_HOME/bin/stop-tc-server.sh ];
+		then
+			cd $TERRACOTTA_HOME/bin
+			echo -n "Stopping Terracotta WAN Server"
+			if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then
+				$SU - $RUN_AS_USER -c "/usr/bin/nohup $TERRACOTTA_HOME/bin/stop-wan.sh -f $WAN_CONFIG_XML" 2>&1 &
+        	else
+          		/usr/bin/nohup $TERRACOTTA_HOME/bin/stop-wan.sh -f $WAN_CONFIG_XML 2>&1 &
+          	fi
+    fi
+
+	RETVAL="$?"
+    if [ "$RETVAL" -eq 0 ]; then
+        echo_success
+    else
+        echo_failure
+    fi
+    echo
+    return $RETVAL
+}
+
+case "$1" in
+ start)
+	start
+	 ;;
+
+ stop)
+	stop
+	 ;;
+ restart)
+	stop
+	sleep 10
+	start
+	;;
+ *)
+	echo "Usage: $0 {start|stop|restart}"
+	RETVAL="2"
+	;;
+esac
+
+exit $RETVAL

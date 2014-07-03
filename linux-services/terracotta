@@ -1,0 +1,113 @@
+#!/bin/bash
+# chkconfig: 345 80 05
+# description: Starts up / Stop the Terracotta nodes on this server as defined by the Terracotta config file.
+## processname: terracotta
+##
+## user: $RUN_AS_USER
+##
+
+#configurable variables
+RUN_AS_USER="@some_system_user@"
+TERRACOTTA_HOME="@terracotta_home_path@"
+TC_CONFIG_XML="@terracotta_config_home_path@/tc-config.xml"
+
+# Source function library.
+if [ -f /etc/init.d/functions ]; then
+  . /etc/init.d/functions
+elif [ -f /etc/rc.d/init.d/functions ] ; then
+  . /etc/rc.d/init.d/functions
+else
+  exit 0
+fi
+
+# Source networking configuration.
+if [ -f /etc/sysconfig/network ]; then
+  . /etc/sysconfig/network
+fi
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+# For SELinux we need to use 'runuser' not 'su'
+if [ -x "/sbin/runuser" ]; then
+    SU="/sbin/runuser"
+else
+    SU="/bin/su"
+fi
+
+RETVAL=$?
+CURRENT_USER=`id -nu`
+SERVER_NAMES=$(cat $TC_CONFIG_XML | grep `hostname` | awk '{print $3}' | cut -f2 -d"=" | sed 's/\"//g' | cut -f1 -d">" | sort -u)
+
+# See how we were called.
+function start() {
+    if [ -f $TERRACOTTA_HOME/bin/start-tc-server.sh ];
+		then
+        	cd $TERRACOTTA_HOME/bin
+			echo "$SERVER_NAMES" | while read -r SERVER_NAME
+			do 
+			echo -n "Starting Terracotta server $SERVER_NAME:"
+			if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then	
+				$SU - $RUN_AS_USER -c "/usr/bin/nohup $TERRACOTTA_HOME/bin/start-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME" 2>&1 &
+        	else
+          		/usr/bin/nohup $TERRACOTTA_HOME/bin/start-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME 2>&1 &
+          	fi
+			done	
+	fi
+      
+    RETVAL="$?"
+    if [ "$RETVAL" -eq 0 ]; then
+        echo_success
+    else
+        echo_failure
+    fi
+    echo
+    return $RETVAL
+}
+
+function stop() {
+    RETVAL="0"
+    if [ -f $TERRACOTTA_HOME/bin/stop-tc-server.sh ];
+		then
+			cd $TERRACOTTA_HOME/bin
+			echo "$SERVER_NAMES" | while read -r SERVER_NAME
+			do 
+			echo -n "Stopping Terracotta server $SERVER_NAME:"
+			if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then
+				$SU - $RUN_AS_USER -c "/usr/bin/nohup $TERRACOTTA_HOME/bin/stop-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME" 2>&1 &
+        	else
+          		/usr/bin/nohup $TERRACOTTA_HOME/bin/stop-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME 2>&1 &
+          	fi
+			done
+    fi
+
+	RETVAL="$?"
+    if [ "$RETVAL" -eq 0 ]; then
+        echo_success
+    else
+        echo_failure
+    fi
+    echo
+    return $RETVAL
+}
+
+case "$1" in
+ start)
+	start
+	 ;;
+
+ stop)
+	stop
+	 ;;
+ restart)
+	stop
+	sleep 10
+	start
+	;;
+ *)
+	echo "Usage: $0 {start|stop|restart}"
+	RETVAL="2"
+	;;
+esac
+
+exit $RETVAL

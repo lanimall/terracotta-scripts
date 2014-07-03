@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<tc:tc-config xmlns:tc="http://www.terracotta.org/config"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.terracotta.org/schema/terracotta-6.xsd">
+
+        <tc-properties>
+        </tc-properties>
+
+        <servers>
+                <mirror-group group-name="partition1">
+                        <server host="hostname1" name="tsa1a">
+                                <data>/opt/terracotta/data/1</data>
+                                <logs>/opt/terracotta/logs/1</logs>
+                                <index>/opt/terracotta/index/1</index>
+                                <tsa-port>9510</tsa-port>
+                                <jmx-port>9520</jmx-port>
+                                <tsa-group-port>9530</tsa-group-port>
+                                <offheap>
+                                        <enabled>true</enabled>
+                                        <maxDataSize>6G</maxDataSize>
+                                </offheap>
+                        </server>
+                        <server host="hostname2" name="tsa1b">
+                                <data>/opt/terracotta/data/2</data>
+                                <logs>/opt/terracotta/logs/2</logs>
+                                <index>/opt/terracotta/index/2</index>
+                                <tsa-port>9610</tsa-port>
+                                <jmx-port>9620</jmx-port>
+                                <tsa-group-port>9630</tsa-group-port>
+                                <offheap>
+                                        <enabled>true</enabled>
+                                        <maxDataSize>6G</maxDataSize>
+                                </offheap>
+                        </server>
+                </mirror-group>
+                <mirror-group group-name="partition2">
+                        <server host="hostname2" name="tsa2a">
+                                <data>/opt/terracotta/data/1</data>
+                                <logs>/opt/terracotta/logs/1</logs>
+                                <index>/opt/terracotta/index/1</index>
+                                <tsa-port>9510</tsa-port>
+                                <jmx-port>9520</jmx-port>
+                                <tsa-group-port>9530</tsa-group-port>
+                                <offheap>
+                                        <enabled>true</enabled>
+                                        <maxDataSize>6G</maxDataSize>
+                                </offheap>
+                        </server>
+                        <server host="hostname1" name="tsa2b">
+                                <data>/opt/terracotta/data/2</data>
+                                <logs>/opt/terracotta/logs/2</logs>
+                                <index>/opt/terracotta/index/2</index>
+                                <tsa-port>9610</tsa-port>
+                                <jmx-port>9620</jmx-port>
+                                <tsa-group-port>9630</tsa-group-port>
+                                <offheap>
+                                        <enabled>true</enabled>
+                                        <maxDataSize>6G</maxDataSize>
+                                </offheap>
+                        </server>
+                </mirror-group>
+                <mirror-group group-name="partition3">
+                        <server host="hostname3" name="tsa3a">
+                                <data>/opt/terracotta/data/1</data>
+                                <logs>/opt/terracotta/logs/1</logs>
+                                <index>/opt/terracotta/index/1</index>
+                                <tsa-port>9510</tsa-port>
+                                <jmx-port>9520</jmx-port>
+                                <tsa-group-port>9530</tsa-group-port>
+                                <offheap>
+                                        <enabled>true</enabled>
+                                        <maxDataSize>6G</maxDataSize>
+                                </offheap>
+                        </server>
+                        <server host="hostname4" name="tsa3b">
+                                <data>/opt/terracotta/data/2</data>
+                                <logs>/opt/terracotta/logs/2</logs>
+                                <index>/opt/terracotta/index/2</index>
+                                <tsa-port>9610</tsa-port>
+                                <jmx-port>9620</jmx-port>
+                                <tsa-group-port>9630</tsa-group-port>
+                                <offheap>
+                                        <enabled>true</enabled>
+                                        <maxDataSize>6G</maxDataSize>
+                                </offheap>
+                        </server>
+                </mirror-group>
+                <mirror-group group-name="partition4">
+                        <server host="hostname4" name="tsa4a">
+                                <data>/opt/terracotta/data/1</data>
+                                <logs>/opt/terracotta/logs/1</logs>
+                                <index>/opt/terracotta/index/1</index>
+                                <tsa-port>9510</tsa-port>
+                                <jmx-port>9520</jmx-port>
+                                <tsa-group-port>9530</tsa-group-port>
+                                <offheap>
+                                        <enabled>true</enabled>
+                                        <maxDataSize>6G</maxDataSize>
+                                </offheap>
+                        </server>
+                        <server host="hostname3" name="tsa4b">
+                                <data>/opt/terracotta/data/2</data>
+                                <logs>/opt/terracotta/logs/2</logs>
+                                <index>/opt/terracotta/index/2</index>
+                                <tsa-port>9610</tsa-port>
+                                <jmx-port>9620</jmx-port>
+                                <tsa-group-port>9630</tsa-group-port>
+                                <offheap>
+                                        <enabled>true</enabled>
+                                        <maxDataSize>6G</maxDataSize>
+                                </offheap>
+                        </server>
+                </mirror-group>
+                <garbage-collection>
+                        <enabled>true</enabled>
+                        <verbose>false</verbose>
+                        <interval>900</interval>
+                </garbage-collection>
+
+                <restartable enabled="false" />
+
+                <client-reconnect-window>120</client-reconnect-window>
+        </servers>
+
+        <!-- Sets where the generated client logs are saved on clients. Note that
+                the exact location of Terracotta logs on client machines may vary based on
+                the value of user.home and the local disk layout. -->
+        <clients>
+                <logs>/opt/terracotta/client-logs/%D</logs>
+        </clients>
+</tc:tc-config>
