@@ -44,12 +44,19 @@ function getPID() {
 function getNodeStatus(){
     FULLSTATUS=""
     TC_NODE_NAME=$1
+    TCPID=`getPID $TC_NODE_NAME`
+    if [ "x$TCPID" == "x" ]; then
+        echo "not running"
+        return
+    fi
+    
+    echo -n "PID:$TCPID"
+    
     SERVERSTAT_PATH="${TERRACOTTA_HOME}/bin/server-stat.sh"
     if [ -f $SERVERSTAT_PATH ]; then
         FULLSTATUS=`${SERVERSTAT_PATH} -f $TC_CONFIG_XML 2> /dev/null | grep ${TC_NODE_NAME}`
+        echo "--$FULLSTATUS" | sed "s/group name/stripe/g" | sed "s/: /:/g" | sed "s/ /--/g" | sed "s/$TC_NODE_NAME\.//g"
     fi
-
-    echo $FULLSTATUS | sed "s/group name/stripe/g" | sed "s/: /:/g" | sed "s/ /--/g" | sed "s/$TC_NODE_NAME\.//g"
 }
 
 # See how we were called.
