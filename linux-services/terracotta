@@ -9,24 +9,17 @@
 #configurable variables
 RUN_AS_USER="@some_system_user@"
 TERRACOTTA_HOME="@terracotta_home_path@"
+TERRACOTTA_LOGS_HOME="@terracotta_logs_home_path@"
 TC_CONFIG_XML="@terracotta_config_home_path@/tc-config.xml"
 
 # Source function library.
 if [ -f /etc/init.d/functions ]; then
-  . /etc/init.d/functions
+    . /etc/init.d/functions
 elif [ -f /etc/rc.d/init.d/functions ] ; then
-  . /etc/rc.d/init.d/functions
+    . /etc/rc.d/init.d/functions
 else
   exit 0
 fi
-
-# Source networking configuration.
-if [ -f /etc/sysconfig/network ]; then
-  . /etc/sysconfig/network
-fi
-
-# Check that networking is up.
-[ ${NETWORKING} = "no" ] && exit 0
 
 # For SELinux we need to use 'runuser' not 'su'
 if [ -x "/sbin/runuser" ]; then
@@ -37,77 +30,118 @@ fi
 
 RETVAL=$?
 CURRENT_USER=`id -nu`
-SERVER_NAMES=$(cat $TC_CONFIG_XML | grep `hostname` | awk '{print $3}' | cut -f2 -d"=" | sed 's/\"//g' | cut -f1 -d">" | sort -u)
+CURRENT_HOSTNAME=`hostname`
+
+SERVER_NAMES=$(cat $TC_CONFIG_XML | grep $CURRENT_HOSTNAME | awk '{print $3}' | cut -f2 -d"=" | sed 's/\"//g' | cut -f1 -d">" | sort -u)
+
+function getPID() {
+    TC_MAIN_CLASS="com.tc.server.TCServerMain"
+    TC_NODE_NAME=$1
+    TC_PID_CMD=`ps -elf | grep ${TC_MAIN_CLASS} | grep -v grep | grep ${TC_NODE_NAME} | awk '{print $4}'`
+    echo $TC_PID_CMD
+}
+
+function getNodeStatus(){
+    FULLSTATUS=""
+    TC_NODE_NAME=$1
+    SERVERSTAT_PATH="${TERRACOTTA_HOME}/bin/server-stat.sh"
+    if [ -f $SERVERSTAT_PATH ]; then
+        FULLSTATUS=`${SERVERSTAT_PATH} -f $TC_CONFIG_XML 2> /dev/null | grep ${TC_NODE_NAME}`
+    fi
+
+    echo $FULLSTATUS | sed "s/group name/stripe/g" | sed "s/: /:/g" | sed "s/ /--/g" | sed "s/$TC_NODE_NAME\.//g"
+}
 
 # See how we were called.
 function start() {
-    if [ -f $TERRACOTTA_HOME/bin/start-tc-server.sh ];
-		then
-        	cd $TERRACOTTA_HOME/bin
-			echo "$SERVER_NAMES" | while read -r SERVER_NAME
-			do 
-			echo -n "Starting Terracotta server $SERVER_NAME:"
-			if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then	
-				$SU - $RUN_AS_USER -c "/usr/bin/nohup $TERRACOTTA_HOME/bin/start-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME" 2>&1 &
-        	else
-          		/usr/bin/nohup $TERRACOTTA_HOME/bin/start-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME 2>&1 &
-          	fi
-			done	
-	fi
-      
-    RETVAL="$?"
-    if [ "$RETVAL" -eq 0 ]; then
-        echo_success
-    else
-        echo_failure
+    RETVAL="1"
+    if [ -f $TERRACOTTA_HOME/bin/start-tc-server.sh ]; then
+        cd $TERRACOTTA_HOME/bin
+        echo "$SERVER_NAMES" | while read -r SERVER_NAME
+        do 
+            echo -n "Starting Terracotta server $SERVER_NAME:"
+            TCPID=`getPID $SERVER_NAME`
+            if [ "x$TCPID" != "x" ]; then
+                echo "Cannot start - Terracotta server $SERVER_NAME is already running. PID=$TCPID"
+            else
+                if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then    
+                    $SU $RUN_AS_USER -c "/usr/bin/nohup $TERRACOTTA_HOME/bin/start-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME >> $TERRACOTTA_LOGS_HOME/nohup-terracotta.out 2>&1" &
+                else
+                    /usr/bin/nohup $TERRACOTTA_HOME/bin/start-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME >> $TERRACOTTA_LOGS_HOME/nohup-terracotta.out 2>&1 &
+                fi
+                
+                RETVAL="$?"
+                if [ "$RETVAL" -eq 0 ]; then
+                    echo_success
+                else
+                    echo_failure
+                fi
+            fi
+        done
     fi
     echo
     return $RETVAL
 }
 
 function stop() {
-    RETVAL="0"
-    if [ -f $TERRACOTTA_HOME/bin/stop-tc-server.sh ];
-		then
-			cd $TERRACOTTA_HOME/bin
-			echo "$SERVER_NAMES" | while read -r SERVER_NAME
-			do 
-			echo -n "Stopping Terracotta server $SERVER_NAME:"
-			if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then
-				$SU - $RUN_AS_USER -c "/usr/bin/nohup $TERRACOTTA_HOME/bin/stop-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME" 2>&1 &
-        	else
-          		/usr/bin/nohup $TERRACOTTA_HOME/bin/stop-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME 2>&1 &
-          	fi
-			done
+    RETVAL="1"
+    if [ -f $TERRACOTTA_HOME/bin/stop-tc-server.sh ]; then
+        cd $TERRACOTTA_HOME/bin
+        echo "$SERVER_NAMES" | while read -r SERVER_NAME
+        do 
+            echo -n "Stopping Terracotta server $SERVER_NAME:"
+            if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then
+                $SU $RUN_AS_USER -c "/usr/bin/nohup $TERRACOTTA_HOME/bin/stop-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME >> $TERRACOTTA_LOGS_HOME/nohup-terracotta.out 2>&1" &
+            else
+                /usr/bin/nohup $TERRACOTTA_HOME/bin/stop-tc-server.sh -f $TC_CONFIG_XML -n $SERVER_NAME >> $TERRACOTTA_LOGS_HOME/nohup-terracotta.out 2>&1 &
+            fi
+            
+            RETVAL="$?"
+            if [ "$RETVAL" -eq 0 ]; then
+                echo_success
+            else
+                echo_failure
+            fi
+        done
     fi
+    echo
+    return $RETVAL
+}
 
-	RETVAL="$?"
-    if [ "$RETVAL" -eq 0 ]; then
-        echo_success
-    else
-        echo_failure
-    fi
+function info() {
+    RETVAL="1"
+    echo "$SERVER_NAMES" | while read -r SERVER_NAME
+        do
+            echo -n "Status for $SERVER_NAME --> "
+            STATUS=`getNodeStatus $SERVER_NAME`
+            if [ "x$STATUS" != "x" ]; then
+                RETVAL=0
+            fi
+            echo $STATUS
+        done
     echo
     return $RETVAL
 }
 
 case "$1" in
  start)
-	start
-	 ;;
-
+    start
+     ;;
  stop)
-	stop
-	 ;;
+    stop
+     ;;
+ info)
+    info
+     ;;
  restart)
-	stop
-	sleep 10
-	start
-	;;
+    stop
+    sleep 10
+    start
+    ;;
  *)
-	echo "Usage: $0 {start|stop|restart}"
-	RETVAL="2"
-	;;
+    echo "Usage: $0 {start|stop|restart|info}"
+    RETVAL="2"
+    ;;
 esac
 
 exit $RETVAL
