@@ -1,15 +1,15 @@
 #!/bin/bash
 # chkconfig: 345 80 05
-# description: Starts up / Stops the Terracotta Management console.
+# description: Start up Terracotta Management console.
 ## processname: tmc
 ##
 ## user: $RUN_AS_USER
 ##
 
-#configurable variables
-RUN_AS_USER="@some_system_user@"
-LOGS_HOME="@some_log_path@"
-TMC_HOME="@tmc_home_path@"
+RUN_AS_USER="tc_user"
+TERRACOTTA_HOME="/opt/terracotta/terracotta-ee/server"
+TERRACOTTA_LOGS_HOME="/opt/terracotta/logs"
+TMC_HOME="$TERRACOTTA_HOME/../tools/management-console"
 
 # Source function library.
 if [ -f /etc/init.d/functions ]; then
@@ -27,9 +27,6 @@ else
     SU="/bin/su"
 fi
 
-#specify nohup command path
-NOHUP="/usr/bin/nohup"
-
 RETVAL=$?
 CURRENT_USER=`id -nu`
 
@@ -42,29 +39,29 @@ function getPID() {
 function start() {
     RETVAL=1
 
-    echo "Starting Terracotta Management console..."
     if [ -f $TMC_HOME/bin/start-tmc.sh ]; then
+        echo "Starting Terracotta Management console..."
         PID=`getPID`
         if [ "x$PID" != "x" ]; then
             echo "Terracotta Management console is already running. PID=$PID"
         else
             cd $TMC_HOME/bin
             if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then
-                $SU $RUN_AS_USER -c "/usr/bin/nohup $TMC_HOME/bin/start-tmc.sh >> $LOGS_HOME/nohup-tmc.out 2>&1" &
+                $SU $RUN_AS_USER -c "/usr/bin/nohup $TMC_HOME/bin/start-tmc.sh >> $TERRACOTTA_LOGS_HOME/nohup-tmc.out 2>&1" &
             else
-                $NOHUP $TMC_HOME/bin/start-tmc.sh >> $LOGS_HOME/nohup-tmc.out 2>&1 &
+                /usr/bin/nohup $TMC_HOME/bin/start-tmc.sh >> $TERRACOTTA_LOGS_HOME/nohup-tmc.out 2>&1 &
             fi
             RETVAL=$?
         fi
     fi
-    
+
     echo -n "Terracotta Management console startup:"
     if [ $RETVAL -eq 0 ]; then
         echo_success
     else
         echo_failure
     fi
-    
+
     echo
     return $RETVAL
 }
@@ -72,13 +69,13 @@ function start() {
 function stop() {
     RETVAL=1
 
-    echo "Stopping Terracotta Management console..."
     if [ -f $TMC_HOME/bin/stop-tmc.sh ]; then
+        echo "Stopping Terracotta Management console..."
         cd $TMC_HOME/bin
         if [ "x$CURRENT_USER" != "x$RUN_AS_USER" ]; then
-            $SU $RUN_AS_USER -c "/usr/bin/nohup $TMC_HOME/bin/stop-tmc.sh >> $LOGS_HOME/nohup-tmc.out 2>&1" &
+            $SU $RUN_AS_USER -c "/usr/bin/nohup $TMC_HOME/bin/stop-tmc.sh >> $TERRACOTTA_LOGS_HOME/nohup-tmc.out 2>&1" &
         else
-            $NOHUP $TMC_HOME/bin/stop-tmc.sh >> $LOGS_HOME/nohup-tmc.out 2>&1 &
+            /usr/bin/nohup $TMC_HOME/bin/stop-tmc.sh >> $TERRACOTTA_LOGS_HOME/nohup-tmc.out 2>&1 &
         fi
         RETVAL=$?
     fi

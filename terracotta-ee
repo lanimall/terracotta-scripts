@@ -7,13 +7,13 @@
 ##
 
 #configurable variables
-RUN_AS_USER="@some_system_user@"
-TERRACOTTA_HOME="@terracotta_home_path@"
-TERRACOTTA_DATA_HOME="@path_to_data@"
-TERRACOTTA_DATA_PRECLEAN_BACKUP_HOME="@path_to_data_backups@"
-TERRACOTTA_LOGS_HOME="@terracotta_logs_home_path@"
-TC_CONFIG_XML="@terracotta_config_home_path@/tc-config.xml"
-TC_JMX_PORT="9520"
+RUN_AS_USER="tc_user"
+TERRACOTTA_HOME="/opt/terracotta/terracotta-ee/server"
+TERRACOTTA_DATA_HOME="/opt/terracotta/data"
+TERRACOTTA_DATA_PRECLEAN_BACKUP_HOME="/opt/terracotta/preclean-data-backup"
+TERRACOTTA_LOGS_HOME="/opt/terracotta/logs"
+TC_CONFIG_XML="$TERRACOTTA_HOME/bin/tc-config.xml"
+TC_JMX_PORT="9570"
 
 # Source function library.
 if [ -f /etc/init.d/functions ]; then
