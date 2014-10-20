@@ -169,11 +169,13 @@ function clearCache()
 
     echo "Begin clearCache($AGENTIDS, $CACHEMANAGERS, $CACHES)"
     
-    #we'll take only 1 agentid...as it does not make sense to clear cache for more agents (clearing the cache will be global)
-    IFS=',' read -a arrAgentIds <<< "$AGENTIDS" 
-    IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
-    IFS=',' read -a arrCaches <<< "$CACHES"
-
+    if [ "x$AGENTIDS" == "x" ]; then
+        AGENTIDS=($NULLVALUE)
+    elif [ "$AGENTIDS" == $ALLVALUE ]; then
+        AGENTIDS=$(retrieveAllCacheAgents)
+    fi
+    IFS=',' read -a arrAgentIds <<< "$AGENTIDS"
+    
     agentid="${arrCacheMgr[0]}"
     if [ "x$CACHEMGRS" == "x" ]; then
         CACHEMGRS=($NULLVALUE)
