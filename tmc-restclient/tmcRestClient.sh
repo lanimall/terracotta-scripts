@@ -15,7 +15,7 @@ BASEDIR=`cd "$PRGDIR" > /dev/null; pwd`
 
 TMC_URL="http://localhost:9889/tmc"
 #for ease of use and deployment, let's try to parse a "TMC_URL" file with the right TMC url
-if [ -f "$BASEDIR/TMC_URL"] ; then
+if [ -f "$BASEDIR/TMC_URL" ] ; then
     TMC_URL=`cat $BASEDIR/TMC_URL`
 fi
 
@@ -227,7 +227,7 @@ function clearCache()
 
 function print_debug()
 {
-    if [ "x$DEBUG" == "xtrue"]; then
+    if [ "x$DEBUG" == "xtrue" ]; then
         echo "$1"
     fi
 }
