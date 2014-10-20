@@ -176,7 +176,9 @@ function clearCache()
     fi
     IFS=',' read -a arrAgentIds <<< "$AGENTIDS"
     
-    agentid="${arrCacheMgr[0]}"
+    #getting only 1 agent because the remove operation does not require to submit to all agents
+    agentid="${arrAgentIds[0]}"
+    
     if [ "x$CACHEMGRS" == "x" ]; then
         CACHEMGRS=($NULLVALUE)
     elif [ "$CACHEMGRS" == $ALLVALUE ]; then
