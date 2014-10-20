@@ -278,10 +278,13 @@ case $key in
 esac
 done
 
+echo "==============================="
 echo "OPERATION = ${OPS}"
 echo "AGENTS = ${AGENTIDS}"
 echo "CACHE MANAGERS = ${CACHEMGRS}"
 echo "CACHES = ${CACHES}"
+echo "==============================="
+echo
 
 CMD=""
 case "$OPS" in
