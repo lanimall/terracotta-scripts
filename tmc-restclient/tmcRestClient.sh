@@ -315,7 +315,7 @@ if [ "x$CMD" != "x" ] ; then
     login "$TMC_USER" "$TMC_PASSWORD"
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
-        `$CMD`
+        $CMD
         RETVAL=$?
         logout
     else
