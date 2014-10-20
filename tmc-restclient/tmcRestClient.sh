@@ -9,9 +9,6 @@ HTTP_JSON_HEADERS="Content-Type: application/json; charset=utf-8"
 CURL_OPTIONS="-s" #-v
 COOKIE_PATH="/tmp/tmccookie"
 
-TMC_USER=
-TMC_PASSWORD=
-
 PRG="$0"
 while [ -h "$PRG" ]; do
     ls=`ls -ld "$PRG"`
@@ -106,22 +103,69 @@ function changeCacheState()
     CACHES=$3   
     ENABLE=$4
 
+    if [ "$AGENTIDS" == "all" ]; then
+        AGENTIDS=$(retrieveAllCacheAgents)
+    fi
     IFS=',' read -a arrAgentIds <<< "$AGENTIDS"
-    IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
-    IFS=',' read -a arrCaches <<< "$CACHES"
-
+    
     for agentid in "${arrAgentIds[@]}"
     do
+        if [ "$CACHEMGRS" == "all" ]; then
+            CACHEMGRS=$(retrieveAllCacheManagers $agentid)
+        fi
+        IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
+        
         for cacheMgr in "${arrCacheMgr[@]}"
         do
+            if [ "$CACHES" == "all" ]; then
+                CACHES=$(retrieveAllCacheManagerCaches $agentid $cacheMgr)
+            fi
+            IFS=',' read -a arrCaches <<< "$CACHES"
+            
             for cache in "${arrCaches[@]}"
             do
                 CACHEFILTER=$(constructCacheURL $agentid $cacheMgr $cache)
-                URL=$TMC_URL$TMC_API_BASE$CACHEFILTER
+                URL="$TMC_URL$TMC_API_BASE$CACHEFILTER"
                 BODY="{\"attributes\":{\"Enabled\":$ENABLE}}"
                 OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_JSON_HEADERS" -b $COOKIE_PATH -d $BODY -X PUT $URL)
                 RETVAL=$?
             done
+        done
+    done
+
+    return $RETVAL
+}
+
+function clearCache()
+{
+    AGENTIDS=$1
+    CACHEMANAGERS=$2
+    CACHES=$3
+
+    #we'll take only 1 agentid...as it does not make sense to clear cache for more agents (clearing the cache will be global)
+    IFS=',' read -a arrAgentIds <<< "$AGENTIDS" 
+    IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
+    IFS=',' read -a arrCaches <<< "$CACHES"
+
+    agentid="${arrCacheMgr[0]}"
+    if [ "$CACHEMGRS" == "all" ]; then
+        CACHEMGRS=$(retrieveAllCacheManagers $agentid)
+    fi
+    IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
+    
+    for cacheMgr in "${arrCacheMgr[@]}"
+    do
+        if [ "$CACHES" == "all" ]; then
+            CACHES=$(retrieveAllCacheManagerCaches $agentid $cacheMgr)
+        fi
+        IFS=',' read -a arrCaches <<< "$CACHES"
+        
+        for cache in "${arrCaches[@]}"
+        do
+            CACHEFILTER=$(constructCacheURL $agentid $cacheMgr $cache)
+            URL="$TMC_URL$TMC_API_BASE$CACHEFILTER/elements"
+            OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_JSON_HEADERS" -b $COOKIE_PATH -X DELETE $URL)
+            RETVAL=$?
         done
     done
 
@@ -171,18 +215,14 @@ case $key in
 esac
 done
 
+TMC_USER=
+TMC_PASSWORD=
+
+read -p "TMC Username: " TMC_USER
+read -s -p "TMC Password: " TMC_PASSWORD
+
+#login right now
 login "$TMC_USER" "$TMC_PASSWORD"
-if [ "$AGENTIDS" == "all" ]; then
-    AGENTIDS=$(retrieveAllCacheAgents)
-fi
-
-if [ "$CACHEMGRS" == "all" ]; then
-    CACHEMGRS=$(retrieveAllCacheManagers)
-fi
-
-if [ "$CACHES" == "all" ]; then
-    CACHES=$(retrieveAllCacheManagerCaches)
-fi
 
 echo "OPERATION = ${OPS}"
 echo "AGENTS = ${AGENTIDS}"
@@ -201,7 +241,7 @@ case "$OPS" in
         changeCacheState "$AGENTIDS" "$CACHEMGRS" "$CACHES" "false"
     ;;
     "clear")
-    
+        clearCache "$AGENTIDS" "$CACHEMGRS" "$CACHES"
     ;;
     *)
         echo "Unknown Option"
