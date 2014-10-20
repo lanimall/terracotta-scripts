@@ -2,15 +2,16 @@ terracotta-scripts: tmcRestClient.sh
 ==================
 
 A script to perform Terracotta management operations (enable/disable caches, clear caches, enable) directly from shell.
-current supported operations are:
+Currently supported operations are:
  - enable/disable caches, 
  - clear caches, 
  - enable/disable statistics
 
-It sends HTTP requests to the Terracotta REST API endpoint [Terracotta Manager Server](http://terracotta.org/documentation/4.0/tms/tms-rest-api) using CURL, and parse JSON response using [JQ](http://stedolan.github.io/jq/download/)
-
 ## Dependencies
 
+This script sends HTTP requests to the Terracotta REST API endpoint [Terracotta Manager Server](http://terracotta.org/documentation/4.0/tms/tms-rest-api) using CURL, and parse JSON response using [JQ](http://stedolan.github.io/jq/download/)
+
+ - A Running [Terracotta Management Server](http://terracotta.org/documentation/4.0/tms)
  - [CURL](http://curl.haxx.se/)
  - [JQ](http://stedolan.github.io/jq/download/)
 
@@ -27,7 +28,9 @@ And make it executable:
 Then, if not available already, install CURL for your target platform. 
 It's of course recommended to use your favorite package manager for the target platform.
 
-Finally, get [JQ](http://stedolan.github.io/jq/download/) binaries for your target platform, and put it in the same path as tmcRestClient.
+Finally, get [JQ](http://stedolan.github.io/jq/download/) binaries for your target platform, and put it in the same path as tmcRestClient. Also, make it executable:
+
+    chmod 755 jq
 
 ## Configuration
 
