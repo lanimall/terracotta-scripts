@@ -58,7 +58,7 @@ function retrieveAllCacheAgents()
 
 function retrieveAllCacheManagers()
 {
-    CACHEFILTER=$(constructCacheURL $1)
+    CACHEFILTER=$(constructCacheURL "$1")
     URL=$TMC_URL$TMC_API_BASE$CACHEFILTER
     OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_JSON_HEADERS" -b $COOKIE_PATH $URL)
     RETVAL=$?
@@ -69,7 +69,7 @@ function retrieveAllCacheManagers()
 
 function retrieveAllCacheManagerCaches()
 {
-    CACHEFILTER=$(constructCacheURL $1 $2)
+    CACHEFILTER=$(constructCacheURL "$1" "$2")
     URL=$TMC_URL$TMC_API_BASE$CACHEFILTER
     OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_JSON_HEADERS" -b $COOKIE_PATH $URL)
     RETVAL=$?
@@ -115,11 +115,11 @@ function changeCacheState()
     CACHES=$3   
     ENABLE=$4
     
-    echo "Begin changeCacheState($AGENTIDS, $CACHEMANAGERS, $CACHES, $ENABLE)"
+    echo "Begin changeCacheState('$AGENTIDS', '$CACHEMANAGERS', '$CACHES', '$ENABLE')"
     
     if [ "x$AGENTIDS" == "x" ]; then
-        AGENTIDS=($NULLVALUE)
-    elif [ "$AGENTIDS" == $ALLVALUE ]; then
+        AGENTIDS=("$NULLVALUE")
+    elif [ "$AGENTIDS" == "$ALLVALUE" ]; then
         AGENTIDS=$(retrieveAllCacheAgents)
     fi
     IFS=',' read -a arrAgentIds <<< "$AGENTIDS"
@@ -127,8 +127,8 @@ function changeCacheState()
     for agentid in "${arrAgentIds[@]}"
     do
         if [ "x$CACHEMGRS" == "x" ]; then
-            CACHEMGRS=($NULLVALUE)
-        elif [ "$CACHEMGRS" == $ALLVALUE ]; then
+            CACHEMGRS=("$NULLVALUE")
+        elif [ "$CACHEMGRS" == "$ALLVALUE" ]; then
             CACHEMGRS=$(retrieveAllCacheManagers $agentid)
         fi
         IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
@@ -136,15 +136,15 @@ function changeCacheState()
         for cacheMgr in "${arrCacheMgr[@]}"
         do
             if [ "x$CACHES" == "x" ]; then
-                CACHES=($NULLVALUE)
-            elif [ "$CACHES" == $ALLVALUE ]; then
+                CACHES=("$NULLVALUE")
+            elif [ "$CACHES" == "$ALLVALUE" ]; then
                 CACHES=$(retrieveAllCacheManagerCaches $agentid $cacheMgr)
             fi
             IFS=',' read -a arrCaches <<< "$CACHES"
             
             for cache in "${arrCaches[@]}"
             do
-                CACHEFILTER=$(constructCacheURL $agentid $cacheMgr $cache)
+                CACHEFILTER=$(constructCacheURL "$agentid" "$cacheMgr" "$cache")
                 URL="$TMC_URL$TMC_API_BASE$CACHEFILTER"
                 BODY="{\"attributes\":{\"Enabled\":$ENABLE}}"
                 
@@ -167,11 +167,11 @@ function clearCache()
     CACHEMANAGERS=$2
     CACHES=$3
 
-    echo "Begin clearCache($AGENTIDS, $CACHEMANAGERS, $CACHES)"
+    echo "Begin clearCache('$AGENTIDS', '$CACHEMANAGERS', '$CACHES')"
     
     if [ "x$AGENTIDS" == "x" ]; then
-        AGENTIDS=($NULLVALUE)
-    elif [ "$AGENTIDS" == $ALLVALUE ]; then
+        AGENTIDS=("$NULLVALUE")
+    elif [ "$AGENTIDS" == "$ALLVALUE" ]; then
         AGENTIDS=$(retrieveAllCacheAgents)
     fi
     IFS=',' read -a arrAgentIds <<< "$AGENTIDS"
@@ -180,8 +180,8 @@ function clearCache()
     agentid="${arrAgentIds[0]}"
     
     if [ "x$CACHEMGRS" == "x" ]; then
-        CACHEMGRS=($NULLVALUE)
-    elif [ "$CACHEMGRS" == $ALLVALUE ]; then
+        CACHEMGRS=("$NULLVALUE")
+    elif [ "$CACHEMGRS" == "$ALLVALUE" ]; then
         CACHEMGRS=$(retrieveAllCacheManagers $agentid)
     fi
     IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
@@ -189,15 +189,15 @@ function clearCache()
     for cacheMgr in "${arrCacheMgr[@]}"
     do
         if [ "x$CACHES" == "x" ]; then
-            CACHES=($NULLVALUE)
-        elif [ "$CACHES" == $ALLVALUE ]; then
+            CACHES=("$NULLVALUE")
+        elif [ "$CACHES" == "$ALLVALUE" ]; then
             CACHES=$(retrieveAllCacheManagerCaches $agentid $cacheMgr)
         fi
         IFS=',' read -a arrCaches <<< "$CACHES"
         
         for cache in "${arrCaches[@]}"
         do
-            CACHEFILTER=$(constructCacheURL $agentid $cacheMgr $cache)
+            CACHEFILTER=$(constructCacheURL "$agentid" "$cacheMgr" "$cache")
             URL="$TMC_URL$TMC_API_BASE$CACHEFILTER/elements"
             
             echo "----------------------"
