@@ -275,34 +275,21 @@ case $key in
 esac
 done
 
-TMC_USER=
-TMC_PASSWORD=
-
-read -p "TMC Username: " TMC_USER
-read -s -p "TMC Password: " TMC_PASSWORD
-
 echo "OPERATION = ${OPS}"
 echo "AGENTS = ${AGENTIDS}"
 echo "CACHE MANAGERS = ${CACHEMGRS}"
 echo "CACHES = ${CACHES}"
+
+CMD=""
 case "$OPS" in
     "enable")
-        login "$TMC_USER" "$TMC_PASSWORD"
-        changeCacheState "$AGENTIDS" "$CACHEMGRS" "$CACHES" "true"
-        RETVAL=$?
-        logout
+        CMD="changeCacheState $AGENTIDS $CACHEMGRS $CACHES true"
     ;;
     "disable")
-        login "$TMC_USER" "$TMC_PASSWORD"
-        changeCacheState "$AGENTIDS" "$CACHEMGRS" "$CACHES" "false"
-        RETVAL=$?
-        logout
+        CMD="changeCacheState $AGENTIDS $CACHEMGRS $CACHES false"
     ;;
     "clear")
-        login "$TMC_USER" "$TMC_PASSWORD"
-        clearCache "$AGENTIDS" "$CACHEMGRS" "$CACHES"
-        RETVAL=$?
-        logout
+        CMD="clearCache $AGENTIDS $CACHEMGRS $CACHES"
     ;;
     *)
         echo "Unknown Option"
@@ -313,7 +300,23 @@ case "$OPS" in
 esac
 
 dt=`date +%Y%m%d_%H%M%S`
-echo -n "$dt - Operation submitted:"
+if [ "x$CMD" != "x" ] ; then
+    TMC_USER=
+    TMC_PASSWORD=
+    read -p "TMC Username: " TMC_USER
+    read -s -p "TMC Password: " TMC_PASSWORD
+    login "$TMC_USER" "$TMC_PASSWORD"
+    RETVAL=$?
+    if [ $RETVAL -eq 0 ]; then
+        `$CMD`
+        RETVAL=$?
+        logout
+    else
+        echo "Could not login. Verify you have the right user / password"
+    fi
+fi
+
+echo -n "$dt - Operation:"
 if [ $RETVAL -eq 0 ]; then
     print_success
 else
