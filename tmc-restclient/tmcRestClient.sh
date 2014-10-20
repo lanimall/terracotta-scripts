@@ -104,7 +104,9 @@ function changeCacheState()
     CACHEMANAGERS=$2
     CACHES=$3   
     ENABLE=$4
-
+    
+    echo "Begin changeCacheState($AGENTIDS, $CACHEMANAGERS, $CACHES, $ENABLE)"
+    
     if [ "x$AGENTIDS" == "x" ]; then
         AGENTIDS=($NULLVALUE)
     elif [ "$AGENTIDS" == $ALLVALUE ]; then
@@ -135,7 +137,12 @@ function changeCacheState()
                 CACHEFILTER=$(constructCacheURL $agentid $cacheMgr $cache)
                 URL="$TMC_URL$TMC_API_BASE$CACHEFILTER"
                 BODY="{\"attributes\":{\"Enabled\":$ENABLE}}"
+                
+                echo "----------------------"
+                echo "Submitting PUT $URL"
                 OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_JSON_HEADERS" -b $COOKIE_PATH -d $BODY -X PUT $URL)
+                echo "Output: $OUTPUT"
+                
                 RETVAL=$?
             done
         done
@@ -150,6 +157,8 @@ function clearCache()
     CACHEMANAGERS=$2
     CACHES=$3
 
+    echo "Begin clearCache($AGENTIDS, $CACHEMANAGERS, $CACHES)"
+    
     #we'll take only 1 agentid...as it does not make sense to clear cache for more agents (clearing the cache will be global)
     IFS=',' read -a arrAgentIds <<< "$AGENTIDS" 
     IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
@@ -176,7 +185,12 @@ function clearCache()
         do
             CACHEFILTER=$(constructCacheURL $agentid $cacheMgr $cache)
             URL="$TMC_URL$TMC_API_BASE$CACHEFILTER/elements"
+            
+            echo "----------------------"
+            echo "Submitting DELETE $URL"
             OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_JSON_HEADERS" -b $COOKIE_PATH -X DELETE $URL)
+            echo "Output: $OUTPUT"
+            
             RETVAL=$?
         done
     done
