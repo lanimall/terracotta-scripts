@@ -38,8 +38,11 @@ function login()
     URL=$TMC_URL$TMC_LOGIN_PATH
     POSTPARAMS="username=$1&password=$2"
     HTTP_HEADERS="Accept: text/html,application/xml; Content-Type:application/x-www-form-urlencoded; charset=utf-8"
-    OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_HEADERS" -d $POSTPARAMS -c $COOKIE_PATH -X POST $URL)
+    OUTPUT=$(curl $CURL_OPTIONS -w "%{http_code}" -o /dev/null -H "$HTTP_HEADERS" -d $POSTPARAMS -c $COOKIE_PATH -X POST $URL)
     RETVAL=$?
+    if [ $RETVAL -eq 0 ] && [ "$OUTPUT" == "403" ] ; then
+        RETVAL=403
+    fi
     return $RETVAL
 }
 
@@ -305,6 +308,7 @@ if [ "x$CMD" != "x" ] ; then
     TMC_PASSWORD=
     read -p "TMC Username: " TMC_USER
     read -s -p "TMC Password: " TMC_PASSWORD
+    echo ""
     login "$TMC_USER" "$TMC_PASSWORD"
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
