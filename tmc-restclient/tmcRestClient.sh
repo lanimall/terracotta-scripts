@@ -2,6 +2,7 @@
 
 TMC_URL="http://localhost:9889/tmc"
 TMC_LOGIN_PATH="/login.jsp"
+TMC_LOGOUT_PATH="/logout"
 TMC_API_BASE="/api"
 TMC_AGENT_INFO="$TMC_API_BASE/agents/info"
 
@@ -32,6 +33,15 @@ function login()
     POSTPARAMS="username=$1&password=$2"
     HTTP_HEADERS="Accept: text/html,application/xml; Content-Type:application/x-www-form-urlencoded; charset=utf-8"
     OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_HEADERS" -d $POSTPARAMS -c $COOKIE_PATH -X POST $URL)
+    RETVAL=$?
+    return $RETVAL
+}
+
+function logout()
+{
+    URL=$TMC_URL$TMC_LOGOUT_PATH
+    HTTP_HEADERS="Accept: text/html,application/xml;"
+    OUTPUT=$(curl $CURL_OPTIONS -H "$HTTP_HEADERS" -b $COOKIE_PATH -c $COOKIE_PATH -X GET $URL)
     RETVAL=$?
     return $RETVAL
 }
@@ -247,27 +257,28 @@ TMC_PASSWORD=
 read -p "TMC Username: " TMC_USER
 read -s -p "TMC Password: " TMC_PASSWORD
 
-#login right now
-login "$TMC_USER" "$TMC_PASSWORD"
-
 echo "OPERATION = ${OPS}"
 echo "AGENTS = ${AGENTIDS}"
 echo "CACHE MANAGERS = ${CACHEMGRS}"
 echo "CACHES = ${CACHES}"
 case "$OPS" in
-    ""|"--help"|"-h"|"-?")
-        echo "Syntax:"
-        echo "$0 -o {enable,disable,clear}"
-        exit 1
-    ;;
     "enable")
+        login "$TMC_USER" "$TMC_PASSWORD"
         changeCacheState "$AGENTIDS" "$CACHEMGRS" "$CACHES" "true"
+        RETVAL=$?
+        logout
     ;;
     "disable")
+        login "$TMC_USER" "$TMC_PASSWORD"
         changeCacheState "$AGENTIDS" "$CACHEMGRS" "$CACHES" "false"
+        RETVAL=$?
+        logout
     ;;
     "clear")
+        login "$TMC_USER" "$TMC_PASSWORD"
         clearCache "$AGENTIDS" "$CACHEMGRS" "$CACHES"
+        RETVAL=$?
+        logout
     ;;
     *)
         echo "Unknown Option"
@@ -276,7 +287,6 @@ case "$OPS" in
         exit 1
     ;;
 esac
-RETVAL=$?
 
 dt=`date +%Y%m%d_%H%M%S`
 echo -n "$dt - Operation submitted:"
@@ -285,4 +295,5 @@ if [ $RETVAL -eq 0 ]; then
 else
     print_failure
 fi
+
 exit $RETVAL
