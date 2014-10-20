@@ -23,6 +23,8 @@ PRGDIR=`dirname "$PRG"`
 BASEDIR=`cd "$PRGDIR" > /dev/null; pwd`
 
 JQ="$BASEDIR/jq"
+NULLVALUE="null"
+ALLVALUE="all"
 
 function login()
 {
@@ -73,17 +75,17 @@ function constructCacheURL()
     CACHEFILTER=$3
     
     FULLFILTER="/agents"
-    if [ "x$AGENTFILTER" != "x" ] ; then
+    if [ "x$AGENTFILTER" != "x" ] && [ "x$AGENTFILTER" != "x$NULLVALUE" ] ; then
         FULLFILTER="$FULLFILTER;ids=$AGENTFILTER"
     fi
 
     FULLFILTER="$FULLFILTER/cacheManagers"
-    if [ "x$CACHEMANAGERFILTER" != "x" ] ; then
+    if [ "x$CACHEMANAGERFILTER" != "x" ] && [ "x$CACHEMANAGERFILTER" != "x$NULLVALUE" ] ; then
         FULLFILTER="$FULLFILTER;names=$CACHEMANAGERFILTER"
     fi
 
     FULLFILTER="$FULLFILTER/caches"
-    if [ "x$CACHEFILTER" != "x" ] ; then
+    if [ "x$CACHEFILTER" != "x" ] && [ "x$CACHEFILTER" != "x$NULLVALUE" ] ; then
         FULLFILTER="$FULLFILTER;names=$CACHEFILTER"
     fi
 
@@ -103,21 +105,27 @@ function changeCacheState()
     CACHES=$3   
     ENABLE=$4
 
-    if [ "$AGENTIDS" == "all" ]; then
+    if [ "x$AGENTIDS" == "x" ]; then
+        AGENTIDS=($NULLVALUE)
+    elif [ "$AGENTIDS" == $ALLVALUE ]; then
         AGENTIDS=$(retrieveAllCacheAgents)
     fi
     IFS=',' read -a arrAgentIds <<< "$AGENTIDS"
     
     for agentid in "${arrAgentIds[@]}"
     do
-        if [ "$CACHEMGRS" == "all" ]; then
+        if [ "x$CACHEMGRS" == "x" ]; then
+            CACHEMGRS=($NULLVALUE)
+        elif [ "$CACHEMGRS" == $ALLVALUE ]; then
             CACHEMGRS=$(retrieveAllCacheManagers $agentid)
         fi
         IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
         
         for cacheMgr in "${arrCacheMgr[@]}"
         do
-            if [ "$CACHES" == "all" ]; then
+            if [ "x$CACHES" == "x" ]; then
+                CACHES=($NULLVALUE)
+            elif [ "$CACHES" == $ALLVALUE ]; then
                 CACHES=$(retrieveAllCacheManagerCaches $agentid $cacheMgr)
             fi
             IFS=',' read -a arrCaches <<< "$CACHES"
@@ -148,14 +156,18 @@ function clearCache()
     IFS=',' read -a arrCaches <<< "$CACHES"
 
     agentid="${arrCacheMgr[0]}"
-    if [ "$CACHEMGRS" == "all" ]; then
+    if [ "x$CACHEMGRS" == "x" ]; then
+        CACHEMGRS=($NULLVALUE)
+    elif [ "$CACHEMGRS" == $ALLVALUE ]; then
         CACHEMGRS=$(retrieveAllCacheManagers $agentid)
     fi
     IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
     
     for cacheMgr in "${arrCacheMgr[@]}"
     do
-        if [ "$CACHES" == "all" ]; then
+        if [ "x$CACHES" == "x" ]; then
+            CACHES=($NULLVALUE)
+        elif [ "$CACHES" == $ALLVALUE ]; then
             CACHES=$(retrieveAllCacheManagerCaches $agentid $cacheMgr)
         fi
         IFS=',' read -a arrCaches <<< "$CACHES"
