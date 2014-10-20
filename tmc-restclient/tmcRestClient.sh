@@ -1,15 +1,5 @@
 #!/bin/bash
 
-TMC_URL="http://localhost:9889/tmc"
-TMC_LOGIN_PATH="/login.jsp"
-TMC_LOGOUT_PATH="/logout"
-TMC_API_BASE="/api"
-TMC_AGENT_INFO="$TMC_API_BASE/agents/info"
-
-HTTP_JSON_HEADERS="Content-Type: application/json; charset=utf-8"
-CURL_OPTIONS="-s" #-v
-COOKIE_PATH="/tmp/tmccookie"
-
 PRG="$0"
 while [ -h "$PRG" ]; do
     ls=`ls -ld "$PRG"`
@@ -23,7 +13,23 @@ done
 PRGDIR=`dirname "$PRG"`
 BASEDIR=`cd "$PRGDIR" > /dev/null; pwd`
 
+TMC_URL="http://localhost:9889/tmc"
+#for ease of use and deployment, let's try to parse a "TMC_URL" file with the right TMC url
+if [ -f "$BASEDIR/TMC_URL"] ; then
+    TMC_URL=`cat $BASEDIR/TMC_URL`
+fi
+
+DEBUG="false"
 JQ="$BASEDIR/jq"
+TMC_LOGIN_PATH="/login.jsp"
+TMC_LOGOUT_PATH="/logout"
+TMC_API_BASE="/api"
+TMC_AGENT_INFO="$TMC_API_BASE/agents/info"
+
+HTTP_JSON_HEADERS="Content-Type: application/json; charset=utf-8"
+CURL_OPTIONS="-s" #-v
+COOKIE_PATH="/tmp/tmccookie"
+
 NULLVALUE="null"
 ALLVALUE="all"
 
@@ -111,17 +117,18 @@ function constructCacheURL()
 function changeCacheState()
 {
     AGENTIDS=$1
-    CACHEMANAGERS=$2
+    CACHEMGRS=$2
     CACHES=$3   
     ENABLE=$4
     
-    echo "Begin changeCacheState('$AGENTIDS', '$CACHEMANAGERS', '$CACHES', '$ENABLE')"
+    echo "Begin changeCacheState('$AGENTIDS', '$CACHEMGRS', '$CACHES', '$ENABLE')"
     
     if [ "x$AGENTIDS" == "x" ]; then
         AGENTIDS=("$NULLVALUE")
     elif [ "$AGENTIDS" == "$ALLVALUE" ]; then
         AGENTIDS=$(retrieveAllCacheAgents)
     fi
+    print_debug "Agents: $AGENTIDS"
     IFS=',' read -a arrAgentIds <<< "$AGENTIDS"
     
     for agentid in "${arrAgentIds[@]}"
@@ -131,7 +138,8 @@ function changeCacheState()
         elif [ "$CACHEMGRS" == "$ALLVALUE" ]; then
             CACHEMGRS=$(retrieveAllCacheManagers $agentid)
         fi
-        IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
+        print_debug "Cache Managers: $CACHEMGRS"
+        IFS=',' read -a arrCacheMgr <<< "$CACHEMGRS"
         
         for cacheMgr in "${arrCacheMgr[@]}"
         do
@@ -140,6 +148,7 @@ function changeCacheState()
             elif [ "$CACHES" == "$ALLVALUE" ]; then
                 CACHES=$(retrieveAllCacheManagerCaches $agentid $cacheMgr)
             fi
+            print_debug "Caches: $CACHES"
             IFS=',' read -a arrCaches <<< "$CACHES"
             
             for cache in "${arrCaches[@]}"
@@ -164,27 +173,30 @@ function changeCacheState()
 function clearCache()
 {
     AGENTIDS=$1
-    CACHEMANAGERS=$2
+    CACHEMGRS=$2
     CACHES=$3
 
-    echo "Begin clearCache('$AGENTIDS', '$CACHEMANAGERS', '$CACHES')"
+    echo "Begin clearCache('$AGENTIDS', '$CACHEMGRS', '$CACHES')"
     
     if [ "x$AGENTIDS" == "x" ]; then
         AGENTIDS=("$NULLVALUE")
     elif [ "$AGENTIDS" == "$ALLVALUE" ]; then
         AGENTIDS=$(retrieveAllCacheAgents)
     fi
+    print_debug "Agents: $AGENTIDS"
     IFS=',' read -a arrAgentIds <<< "$AGENTIDS"
     
     #getting only 1 agent because the remove operation does not require to submit to all agents
     agentid="${arrAgentIds[0]}"
     
+    print_debug "Single Agent chosen: $agentid"
     if [ "x$CACHEMGRS" == "x" ]; then
         CACHEMGRS=("$NULLVALUE")
     elif [ "$CACHEMGRS" == "$ALLVALUE" ]; then
         CACHEMGRS=$(retrieveAllCacheManagers $agentid)
     fi
-    IFS=',' read -a arrCacheMgr <<< "$CACHEMANAGERS"
+    print_debug "Cache Managers: $CACHEMGRS"
+    IFS=',' read -a arrCacheMgr <<< "$CACHEMGRS"
     
     for cacheMgr in "${arrCacheMgr[@]}"
     do
@@ -193,6 +205,7 @@ function clearCache()
         elif [ "$CACHES" == "$ALLVALUE" ]; then
             CACHES=$(retrieveAllCacheManagerCaches $agentid $cacheMgr)
         fi
+        print_debug "Caches: $CACHES"
         IFS=',' read -a arrCaches <<< "$CACHES"
         
         for cache in "${arrCaches[@]}"
@@ -210,6 +223,13 @@ function clearCache()
     done
 
     return $RETVAL
+}
+
+function print_debug()
+{
+    if [ "x$DEBUG" == "xtrue"]; then
+        echo "$1"
+    fi
 }
 
 function print_success()
