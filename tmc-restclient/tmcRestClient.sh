@@ -27,8 +27,8 @@ TMC_API_BASE="/api"
 TMC_AGENT_INFO="$TMC_API_BASE/agents/info"
 
 HTTP_JSON_HEADERS="Content-Type: application/json; charset=utf-8"
-CURL_OPTIONS="-s" #-v
-COOKIE_PATH="/tmp/tmccookie"
+CURL_OPTIONS="-s" #-s
+COOKIE_PATH="$HOME/.tmcrestclientcookie"
 
 NULLVALUE="null"
 ALLVALUE="all"
@@ -267,6 +267,14 @@ case $key in
         OPS="$1"
         shift
     ;;
+    -u|--user)
+        TMC_USER="$1"
+        shift
+    ;;
+    -p|--password)
+        TMC_PASSWORD="$1"
+        shift
+    ;;
     --default)
         DEFAULT=YES
         shift
@@ -307,11 +315,13 @@ esac
 
 dt=`date +%Y%m%d_%H%M%S`
 if [ "x$CMD" != "x" ] ; then
-    TMC_USER=
-    TMC_PASSWORD=
-    read -p "TMC Username: " TMC_USER
-    read -s -p "TMC Password: " TMC_PASSWORD
-    echo ""
+    if [ "x$TMC_USER" == "x" ] ; then
+        TMC_USER=""
+        TMC_PASSWORD=""
+        read -p "TMC Username: " TMC_USER
+        read -s -p "TMC Password: " TMC_PASSWORD
+        echo ""
+    fi
     login "$TMC_USER" "$TMC_PASSWORD"
     RETVAL=$?
     if [ $RETVAL -eq 0 ]; then
